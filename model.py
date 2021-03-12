@@ -6,6 +6,8 @@ Created on Fri Mar 12 18:11:03 2021
 """
 import tensorflow as tf
 from tensorflow.keras.layers import *
+from tensorflow.keras import Model
+
 
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -14,12 +16,12 @@ import numpy as np
 
 
 
-data_path = r'C:\Users\adelv\Documents\Hackaton\hackathon_kpis_anonymised\hackathon_kpis_anonymised.csv'
+data_path = r'hackathon_kpis_anonymised.csv'
 df = pd.read_csv(data_path)
 df = df.dropna()
 df = df.values
 
-
+#Removing the two descriptive lines, they are not numbers
 df = df[:,2:]
 
 #%%
