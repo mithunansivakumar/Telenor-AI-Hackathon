@@ -1,2 +1,4 @@
 venv
-hackathon_kpis_anonymised.csv
+/hackathon_kpis_anonymised.csv
+/predicted_nans.csv
+/.vscode/
