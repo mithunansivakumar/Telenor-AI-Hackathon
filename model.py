@@ -109,6 +109,7 @@ def plotData(history):
 
 plotData(history)
 
+# %%
 
 
 
@@ -200,6 +201,7 @@ def plot_MSE_features(df, model):
 
 plot_MSE_features(df, model)
 
+plot_MSE_features(df, model)
 
 
 # plot MSE over all features, FULL DATASET
