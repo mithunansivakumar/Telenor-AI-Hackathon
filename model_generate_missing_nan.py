@@ -74,8 +74,8 @@ def simple_conv_autoencoder(input_shape,ksize=3):
     
 def unet(input_shape,pretrained_weights = None,ksize=3):
 
-    conv1 = Conv1D(14, ksize, activation='relu', padding='same')(input_shape)
-    conv1 = Conv1D(14, ksize, activation='relu', padding='same')(conv1)
+    conv1 = Conv1D(input_shape.shape[-1], ksize, activation='relu', padding='same')(input_shape)
+    conv1 = Conv1D(input_shape.shape[-1], ksize, activation='relu', padding='same')(conv1)
     pool1 = MaxPooling1D(pool_size=2)(conv1)
 
     conv2 = Conv1D(32, ksize, activation='relu', padding='same')(pool1)
@@ -98,10 +98,10 @@ def unet(input_shape,pretrained_weights = None,ksize=3):
     conv6 = Conv1D(32, ksize, activation='relu', padding='same')(conv6)
 
     up7 = concatenate([UpSampling1D(size=2)(conv6), conv1], axis=-1)
-    conv7 = Conv1D(14, ksize, activation='relu', padding='same')(up7)
-    conv7 = Conv1D(14, ksize, activation='relu', padding='same')(conv7)
+    conv7 = Conv1D(input_shape.shape[-1], ksize, activation='relu', padding='same')(up7)
+    conv7 = Conv1D(input_shape.shape[-1], ksize, activation='relu', padding='same')(conv7)
 
-    conv8 = Conv1D(14,1, activation='sigmoid')(conv7)
+    conv8 = Conv1D(input_shape.shape[-1],1, activation='sigmoid')(conv7)
 
     return conv8
 
@@ -131,66 +131,56 @@ xtest = xtrain[:int(xtrain.shape[0] * test_split)]
 #resterende brukes til trening
 xtrain = xtrain[int(xtrain.shape[0] * test_split):]
 
-
+#%%
 
 input_shape = tf.keras.layers.Input(shape=(xtrain.shape[1],xtrain.shape[2]))
-
-
-model = Model(input_shape, unet(input_shape,ksize=1) )
-
-
+model = Model(input_shape, unet(input_shape,ksize=3) )
 model.compile(loss='mse',optimizer='adam')
-model.summary()
 
 EPOCHS = 100
 
 callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=6)
-model.fit(xtrain,xtrain,validation_split=.1,epochs=EPOCHS,callbacks=[callback])
+history = model.fit(xtrain,xtrain,validation_split=.2,epochs=EPOCHS,callbacks=[callback])
+
+model.save('data_model.h5')
+
+#%%
+def plot_prediction_test(xtest,plot_length=100,feature=0,fill_nan=False,num_nan_percent=0.1):
+
+    
+    
+    number_of_nans = int(plot_length * .1)
+    nan_inds = np.random.choice(plot_length,number_of_nans)
+    print(nan_inds)
+    xtest_original = xtest
+    xtest[nan_inds] = -1
+    
+    
+    
+    preds = model.predict(xtest)
+    preds = preds.reshape(preds.shape[0]*window_size,preds.shape[-1])
+    xtest = xtest.reshape(xtest.shape[0]*window_size,xtest.shape[-1])
+    
+    
+    xtest_original = xtest_original.reshape(xtest_original.shape[0]*window_size,
+                                            xtest_original.shape[-1])
+    
+    assert xtest.shape == preds.shape
+    
+    
+    
+    
+    plt.plot(preds[:100,feature],label="prediction")
+    plt.plot(xtest_original[:100,feature],label="ground truth")
+    plt.plot(xtest[:100,feature],label="filled_with_nan")
+    plt.legend()
+    plt.show()
+    
+plot_prediction_test(xtest,feature=4)
 
 
 
 #%%
-b = df2.shape[0] % window_size
-df2 = df2.astype(np.single)
-df2 = df2[:-b]
-
-df2 = df2.reshape(df2.shape[0]//window_size,window_size,df2.shape[-1])
-preds = model.predict(df2)
-
-
-#preds = preds.reshape(preds.shape[0],preds.shape[-1])
-
-test = preds[:,1,:]
-x,y = np.where(df2[:,1,:] == - 1)
-out = df2[:,1,:][x,y]
-out = test[x,y]
-
-np.savetxt('predicted_nans.csv', df2[:,1,:], delimiter=',')
-
-
-
-
-
-
-
-
-#%%
-num_to_plot = 8
-
-
-predictions = model.predict(df2[:num_to_plot])
-
-fig,axs = plt.subplots(2,num_to_plot//2,sharey=True,figsize=(10,10))
-
-for ind,ax in enumerate(axs.flat):
-    ax.plot(predictions[ind,:,2],label="pred")
-    ax.plot(df2[ind,:,2],label="gt")
-    
-    
-
-
-
-plt.legend()
 
 
 
